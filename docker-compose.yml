@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  app:
+    depends_on:
+      - db
+    environment:
+      - YOURLS_DB_HOST=db
+      - YOURLS_DB_NAME=${MYSQL_DATABASE}
+      - YOURLS_DB_PASS=${MYSQL_PASSWORD}
+      - YOURLS_DB_PREFIX=${YOURLS_DB_PREFIX}
+      - YOURLS_DB_USER=${MYSQL_USER}
+      - YOURLS_PASSWORD=${YOURLS_PASSWORD}
+      - YOURLS_SITE=${YOURLS_SITE}
+      - YOURLS_URL_CONVERT=${YOURLS_URL_CONVERT}
+      - YOURLS_USER=${YOURLS_USER}
+    image: ${YOURLS_IMAGE}
+    labels:
+      - traefik.enable=true
+      ### Section HTTP
+      - traefik.http.routers.http-shorte_bjphoster_com.entrypoints=http
+      # redirect to HTTPS only
+      - traefik.http.routers.http-shorte_bjphoster_com.middlewares=http-to-https
+      - traefik.http.routers.http-shorte_bjphoster_com.rule=Host(`shorte.bjphoster.com`)
+      ### Section HTTPS
+      - traefik.http.routers.https-shorte_bjphoster_com.entrypoints=https
+      # configure the exposed service
+      - traefik.http.routers.https-shorte_bjphoster_com.rule=Host(`shorte.bjphoster.com`)
+      # of course, enable TLS and it's certificate provider
+      - traefik.http.routers.https-shorte_bjphoster_com.tls=true
+      - traefik.http.routers.https-shorte_bjphoster_com.tls.certresolver=letsencrypt
+    restart: unless-stopped
+    volumes:
+      - ./config/config.php:/var/www/html/user/config.php
+
+  db:
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_USER=${MYSQL_USER}
+    image: ${MYSQL_IMAGE}
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
