@@ -16,6 +16,7 @@ services:
       - YOURLS_USER=${YOURLS_USER}
     image: ${YOURLS_IMAGE}
     labels:
+      - traefik.docker.network=traefik-proxy
       - traefik.enable=true
       ### Section HTTP
       - traefik.http.routers.http-shorte_bjphoster_com.entrypoints=http
@@ -29,6 +30,9 @@ services:
       # of course, enable TLS and it's certificate provider
       - traefik.http.routers.https-shorte_bjphoster_com.tls=true
       - traefik.http.routers.https-shorte_bjphoster_com.tls.certresolver=letsencrypt
+    networks:
+      - internal
+      - traefik-proxy
     restart: unless-stopped
     volumes:
       - ./config/config.php:/var/www/html/user/config.php
@@ -40,9 +44,16 @@ services:
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
       - MYSQL_USER=${MYSQL_USER}
     image: ${MYSQL_IMAGE}
+    networks:
+      - internal
     restart: unless-stopped
     volumes:
       - db_data:/var/lib/mysql
+
+networks:
+  internal:
+  traefik-proxy:
+    external: true
 
 volumes:
   db_data:
